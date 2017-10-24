@@ -8,101 +8,137 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WS02JavaParser {
 
+    private SCRComponent scrComponent;
+    private boolean isScrAnnotation;
+    FileInputStream in =null;
+
     public void setFilePath(String path) throws IOException {
 
-        Object element =null;
+        Object element = null;
+        this.in= new FileInputStream(path);
+        CompilationUnit cu = JavaParser.parse(in);
+        cu.accept(new MethodVisitor(), null);
 
-        FileInputStream in=new FileInputStream(path);
-        CompilationUnit cu= JavaParser.parse(in);
-        cu.accept(new MethodVisitor(),null);
-
-        List commentList=cu.getComments();
-        ListIterator itr= commentList.listIterator();
-        while(itr.hasNext()) {
+        List commentList = cu.getComments();
+        ListIterator itr = commentList.listIterator();
+        while (itr.hasNext()) {
             element = itr.next();
-            System.out.print(element + " ");
-            break;
-        }
-        if(element!=null) {
-        }
-    }
-
-    private static class MethodVisitor extends VoidVisitorAdapter<Void> {
-        @Override
-        public void visit(MethodDeclaration n, Void arg) {
-            /* here you can access the attributes of the method.
-             this method will be called for all methods in this
-             CompilationUnit, including inner class methods */
-            System.out.println(n.getName());
-            super.visit(n, arg);
-        }
-    }
-
-
-   /* private void getAnnotationList(String scrComment){
-        String[] scrElementList=scrComment.split(" ");
-       // List<String> scrElementList = new ArrayList<String>(Arrays.asList(scrCommentElements));
-        int referenceTagNo=0;
-        
-
-        for(int i=0;i<scrElementList.length;i++){
-            if(scrElementList[i].equals(COMPONENT_ANNOTATION)){
-                while(!scrElementList[i].equals(REFERENCE_ANNOTATION)){
-                    if(scrElementList[i].equals(NAME)){
-                        wso2ComponentAnnotation.setComponentName(scrElementList[i]);
-                    }else if(scrElementList[i].equals(IMMEDIATE)){
-                        wso2ComponentAnnotation.setComponentName(scrElementList[i]);
+            isScrAnnotation = checkScrComponentAnnotation(element.toString());
+            if (isScrAnnotation) {
+                System.out.print(element.toString());
+                String[] scrElementList = element.toString().split("@");
+                List<String> list = new ArrayList();
+                for (String x : scrElementList) {
+                    if (x.contains("scr")) {
+                        x = x.replaceAll("/", "");
+                        x = x.replaceAll("\\*", "");
+                        list.add(x);
                     }
-                    i++;
                 }
-            }else if(scrElementList[i].equals(REFERENCE_ANNOTATION)){
-                WSO2ReferenceAnnotation wso2ReferenceAnnotation =new WSO2ReferenceAnnotation();
-                do{
-                    i++;
-                    if(scrElementList[i].equals(NAME)){
-                        wso2ReferenceAnnotation.setReferenceName(scrElementList[i]);
-                    }else if(scrElementList[i].equals(INTERFACE)) {
-                        wso2ReferenceAnnotation.setService(scrElementList[i]);
-                    }else if(scrElementList[i].equals(CARDINALITY)){
-                        wso2ReferenceAnnotation.setCardinality(scrElementList[i]);
-                    }else if(scrElementList[i].equals(POLICY)){
-                        wso2ReferenceAnnotation.setPolicy(scrElementList[i]);
-                    }else if(scrElementList[i].equals(BIND)){
-                        wso2ReferenceAnnotation.setBind(scrElementList[i]);
-                    }else if(scrElementList[i].equals(UNBIND)){
-                        wso2ReferenceAnnotation.setUnbind(scrElementList[i]);
+                for (String x : list) {
+                    if (x.contains("component")) {
+                        getScrAnnotation(x);
+                    } else if (x.contains("reference")) {
+                        scrComponent.addReferences(getReference(x));
+                    } else {
+                        System.out.print("error");
                     }
-                }while(scrElementList[i].equals(REFERENCE_ANNOTATION));
-               wso2ReferenceAnnotationlist.add(referenceTagNo,wso2ReferenceAnnotation);
-                referenceTagNo++;
+                }
+                break;
+
             }
         }
 
     }
 
-    public List<WSO2ReferenceAnnotation> getWSO2ReferenceAnnotation(){
-        return this.wso2ReferenceAnnotationlist;
-    }
+    private static class MethodVisitor extends VoidVisitorAdapter<Void> {
 
-    public WSO2ComponentAnnotation getWSO2ComponentAnnotation() {
-         return this.wso2ComponentAnnotation;
-    }
+        @Override
+        public void visit(MethodDeclaration n, Void arg) {
 
-
-    private void printWSO2ReferenceAnnotation(List<WSO2ReferenceAnnotation> wso2ReferenceAnnotationlist){
-        ListIterator itr= wso2ReferenceAnnotationlist.listIterator();
-        Object element =null;
-        while(itr.hasNext()) {
-            element = itr.next();
-            System.out.print(element + " ");
-            break;
+            super.visit(n, arg);
         }
-    }*/
+    }
 
+    private boolean checkScrComponentAnnotation(String comment) {
+
+        String patternString = "\\**^(.)*\\*\\s(.)*[@scr.component]";
+        Pattern pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(comment);
+        return matcher.lookingAt();
+    }
+
+    private void getScrAnnotation(String x) {
+
+        String immediate = null;
+        String name = null;
+        Pattern p = Pattern.compile("immediate=\"([^\"]*)\"");
+        Matcher m = p.matcher(x);
+        while (m.find()) {
+            immediate = m.group(1);
+        }
+        Pattern pname = Pattern.compile("name=\"([^\"]*)\"");
+        Matcher mname = pname.matcher(x);
+        while (mname.find()) {
+            name = mname.group(1);
+        }
+        System.out.println("name: " + name + " immediate :" + immediate + "\n");
+        this.scrComponent = new SCRComponent(name, immediate);
+    }
+
+    private SCRReference getReference(String reference) {
+
+        SCRReference scrReference = new SCRReference();
+        Pattern p = Pattern.compile("name=\"([^\"]*)\"");
+        Matcher m = p.matcher(reference);
+        while (m.find()) {
+            scrReference.setReferenceName(m.group(1));
+            System.out.println("Reference Name: " + scrReference.getReferenceName());
+        }
+        Pattern q = Pattern.compile("interface=\"([^\"]*)\"");
+        Matcher x = q.matcher(reference);
+        while (x.find()) {
+            scrReference.setService(x.group(1));
+            System.out.println("Service: " + scrReference.getService());
+        }
+        Pattern c = Pattern.compile("cardinality=\"([^\"]*)\"");
+        Matcher d = c.matcher(reference);
+        while (d.find()) {
+            scrReference.setCardinality(d.group(1));
+            System.out.println("Cardinality: " + scrReference.getCardinality());
+        }
+        Pattern cs = Pattern.compile("policy=\"([^\"]*)\"");
+        Matcher ds = cs.matcher(reference);
+        while (ds.find()) {
+            scrReference.setPolicy(ds.group(1));
+            System.out.println("Policy: " + scrReference.getPolicy());
+        }
+        Pattern csd = Pattern.compile("unbind=\"([^\"]*)\"");
+        Matcher dsd = csd.matcher(reference);
+        while (dsd.find()) {
+            scrReference.setUnbind(dsd.group(1));
+            System.out.println("unbind: " + scrReference.getUnbind());
+        }
+        Pattern csdx = Pattern.compile("bind=\"([^\"]*)\"");
+        String dsq = reference.replace("unbind", "***");
+        Matcher dsdx = csdx.matcher(dsq);
+        while (dsdx.find()) {
+            scrReference.setBind(dsdx.group(1));
+            System.out.println("bind: " + scrReference.getBind());
+        }
+        System.out.println("\n");
+        return scrReference;
+    }
+
+    private void readFile() throws IOException {
+        System.out.print((char)in.read());
+    }
 }
+
