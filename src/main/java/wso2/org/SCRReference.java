@@ -1,6 +1,6 @@
 package wso2.org;
 
-public class WSO2ReferenceAnnotation {
+public class SCRReference {
 
     private String referenceName;
     private String service;
@@ -18,7 +18,7 @@ public class WSO2ReferenceAnnotation {
 
     private String bind;
 
-    public WSO2ReferenceAnnotation(){
+    public SCRReference(){
     }
 
     public String getReferenceName() {
