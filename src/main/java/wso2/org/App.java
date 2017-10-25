@@ -11,27 +11,29 @@ public class App
 {
     public static void main( String[] args ) throws IOException
     {
-        WS02JavaParser ws02JavaParser=new WS02JavaParser();
-        FileChanger fileChanger=new FileChanger();
-        //fileChanger.writeInComponentFile("abc",4,filePath);
-        List internalPaths=ws02JavaParser.getComponentPaths("/home/dineth/wso2-test/identity-governance/component.xml");
-        for(int i=0;i<internalPaths.size();i++) {
-            String fileName=null;
-            if(internalPaths.get(i).toString()!=null) {
-                fileName = ws02JavaParser.getInternalFiles(internalPaths.get(i).toString());
+        if(args[0]==null){
+            System.out.println("path name is missing");
+        } else {
+            String path = args[0];
+            WSO2JavaParser wso2JavaParser = new WSO2JavaParser();
+            List internalPaths = wso2JavaParser.getComponentPaths(path);
+
+
+            int directoryPaths = internalPaths.size();
+
+            for (int i = 0; i < directoryPaths; i++) {
+                List<String> fileNames = wso2JavaParser.getInternalFiles(internalPaths.get(i).toString());
+                for (int x = 0; x < fileNames.size(); x++) {
+                    wso2JavaParser.setFilePath(fileNames.get(x));
+                }
             }
-            if(fileName!=null) {
-                ws02JavaParser.setFilePath(fileName);
-            }
+            System.out.println("Number of internal directories : "+ directoryPaths);
         }
+
+        //String path="src" + File.separator +File.separator + "resources" + File.separator;
+        //WSO2JavaParser wso2JavaParser =new WSO2JavaParser();
+        //wso2JavaParser.setFilePath(path+"IdentityPasswordHistoryServiceComponent.java");
+
     }
 
-
-
-
-
 }
-
-
-
-
