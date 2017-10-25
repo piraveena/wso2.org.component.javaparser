@@ -66,7 +66,7 @@ public class WS02JavaParser {
     }
 
     private boolean checkScrComponentAnnotation(String comment) {
-        String patternString = "\\**^(.)*\\*\\s(.)*[@scr.component]";
+        String patternString = "\\**^(.)*\\*\\s(.)*[@scr.component]+";
         Pattern pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(comment);
         return matcher.lookingAt();
