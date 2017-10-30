@@ -72,7 +72,7 @@ public class WSO2JavaParser {
     }
 
     private boolean checkScrComponentAnnotation(String comment) {
-        String patternString = "\\**^(.)*\\*\\s(.)*[@scr.component]+";
+        String patternString = "\\**^(.)*\\*\\s(.)*(@scr.component)+";
         Pattern pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(comment);
         return matcher.lookingAt();
@@ -103,38 +103,32 @@ public class WSO2JavaParser {
         Matcher m = p.matcher(reference);
         while (m.find()) {
             scrReference.setReferenceName(m.group(1));
-            //System.out.println("Reference Name: " + scrReference.getReferenceName());
         }
         Pattern q = Pattern.compile("interface=\"([^\"]*)\"");
         Matcher x = q.matcher(reference);
         while (x.find()) {
             scrReference.setService(x.group(1));
-           // System.out.println("Service: " + scrReference.getService());
         }
         Pattern c = Pattern.compile("cardinality=\"([^\"]*)\"");
         Matcher d = c.matcher(reference);
         while (d.find()) {
             scrReference.setCardinality(d.group(1));
-            //System.out.println("Cardinality: " + scrReference.getCardinality());
         }
         Pattern cs = Pattern.compile("policy=\"([^\"]*)\"");
         Matcher ds = cs.matcher(reference);
         while (ds.find()) {
             scrReference.setPolicy(ds.group(1));
-           // System.out.println("Policy: " + scrReference.getPolicy());
         }
         Pattern csd = Pattern.compile("unbind=\"([^\"]*)\"");
         Matcher dsd = csd.matcher(reference);
         while (dsd.find()) {
             scrReference.setUnbind(dsd.group(1));
-            //System.out.println("unbind: " + scrReference.getUnbind());
         }
         Pattern csdx = Pattern.compile("bind=\"([^\"]*)\"");
         String dsq = reference.replace("unbind", "***");
         Matcher dsdx = csdx.matcher(dsq);
         while (dsdx.find()) {
             scrReference.setBind(dsdx.group(1));
-           // System.out.println("bind: " + scrReference.getBind());
         }
         System.out.println("\n");
         return scrReference;
